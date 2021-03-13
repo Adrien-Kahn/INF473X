@@ -24,8 +24,3 @@ clean:
 	rm hello-world.o hello-world
 	rm international-hello-world.o international-hello-world
 	rm fancy-hello-world.o fancy-hello-world
-
-git:
-	git add .
-	git commit -m "$m"
-	git push
