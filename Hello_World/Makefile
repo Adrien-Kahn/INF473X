@@ -1,4 +1,4 @@
-LANGUAGE=SPANISH
+LANGUAGE=JAPANESE
 
 all: hello-world international-hello-world fancy-hello-world
 
@@ -12,7 +12,7 @@ international-hello-world: international-hello-world.o
 	cc -g -o international-hello-world international-hello-world.o
 
 international-hello-world.o: international-hello-world.c
-	cc -c -Wall -g international-hello-world.c
+	cc -c -Wall -g international-hello-world.c -D$(LANGUAGE)
 
 fancy-hello-world: fancy-hello-world.o
 	cc -g -o fancy-hello-world fancy-hello-world.o
