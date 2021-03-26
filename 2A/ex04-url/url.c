@@ -59,7 +59,22 @@ int parse_url(char* url, url_info *info)
 	 * 	 Note: The path is stored WITHOUT the first '/'.
 	 * 	       It simplifies this function, but I'll let you understand how. :-)
 	 */
-
+	
+	char *slash, *hostname_port, *path; 
+	slash = strchr(host_name_path, '/');
+		
+	if (slash != NULL) {
+		*slash = '\0';
+		hostname_port = host_name_path;
+		path = slash + 1;
+	} else {
+		return 1;
+	}
+	
+	info->path = path;
+	info->host = hostname_port;
+	
+	
 	/*
 	 * To be completed:
 	 * 	 Look for ':' in the hostname
