@@ -72,8 +72,6 @@ int parse_url(char* url, url_info *info)
 	}
 	
 	info->path = path;
-	info->host = hostname_port;
-	
 	
 	/*
 	 * To be completed:
@@ -82,7 +80,31 @@ int parse_url(char* url, url_info *info)
 	 * 	 If ':' is found, split the string and use sscanf to parse the port.
 	 * 	 Return an error if the port is not a number, and store it otherwise.
 	 */
-
+	
+	char *two_points, *hostname, *port;
+	two_points = strchr(hostname_port, ':');
+	
+	if (two_points != NULL) {
+		*two_points = '\0';
+		hostname = hostname_port;
+		port = two_points + 1;
+	} else {
+		hostname = hostname_port;
+		port = "80";
+	}
+	
+	info->host = hostname;
+	
+	int port_int;
+	
+	// EVEN IF port STARTS WITH A SINGLE INT AND AFTER SOMETHING ELSE, sscanf WILL REPORT 1 !
+	
+	if (sscanf(port, "%d", &port_int) == 1) {
+		info->port = port_int;
+	} else {
+		return 2;
+	}
+	
 	// If everything went well, return 0.
 	return 0;
 }

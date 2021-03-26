@@ -28,8 +28,6 @@ typedef struct url_info url_info;
 // Declare the function
 int parse_url(char* url, url_info *info);
 
-static const char P_HTTP[] = "http";
-
 // parse_url error codes
 #define PARSE_URL_OK 0
 #define PARSE_URL_NO_SLASH 1
