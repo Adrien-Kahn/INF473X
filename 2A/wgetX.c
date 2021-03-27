@@ -24,6 +24,10 @@
 #include "url.h"
 #include "wgetX.h"
 
+
+// Inspired in some parts by beej.us/guide/bgnet
+
+
 int main(int argc, char* argv[]) {
     url_info info;
     const char * file_name = "received_page";
@@ -47,13 +51,15 @@ int main(int argc, char* argv[]) {
     }
 
     //If needed for debug
-    //print_url_info(&info);
+    print_url_info(&info);
+    printf("\n");
 
     // Download the page
     struct http_reply reply;
 
     ret = download_page(&info, &reply);
     if (ret) {
+    printf("Download Failed\n");
 	return 3;
     }
 
@@ -88,6 +94,28 @@ int download_page(url_info *info, http_reply *reply) {
      *     Use getaddrinfo and implement a function that works for both IPv4 and IPv6.
      *
      */
+     
+     struct addrinfo hints;
+     struct addrinfo *res;
+     
+     printf("hello\n"); 
+     printf("%d\n", sizeof(hints));
+     memset(&hints, 0, sizeof(hints));
+     
+     hints.ai_family = PF_UNSPEC;
+     hints.ai_socktype = SOCK_STREAM;
+     hints.ai_flags = AI_CANONNAME;
+     
+     int status;
+     status = getaddrinfo(info->host, info->protocol, &hints, &res);
+     printf("hello\n");  
+     printf("%d\n", status);
+     printf("hello\n");  
+     if (status != 0) {
+     	printf("yaa");
+     } else {
+     	printf("hello");
+     }
 
 
 
@@ -133,7 +161,7 @@ int download_page(url_info *info, http_reply *reply) {
 
 
 
-    return 0;
+    return 1;
 }
 
 void write_data(const char *path, const char * data, int len) {
