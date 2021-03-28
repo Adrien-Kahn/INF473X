@@ -122,18 +122,59 @@ int download_page(url_info *info, http_reply *reply) {
      	printf("Unknown IP format\n\n");
      }
      
-     // PROBABLY WON'T WORK ON IPV4 (sockaddr_in6)
-     struct sockaddr_in *mysocket = (struct sockaddr_in *) res->ai_addr;
-     struct in_addr *myaddr = &(mysocket->sin_addr);
+     // PROBABLY WON'T WORK ON IPV6 (sockaddr_in6)
+     struct sockaddr_in *dest = (struct sockaddr_in *) res->ai_addr;
+     struct in_addr *myinaddr = &(dest->sin_addr);
      char ipstr[50];
      
-     inet_ntop(res->ai_family, myaddr, ipstr, sizeof(ipstr));
+     inet_ntop(res->ai_family, myinaddr, ipstr, sizeof(ipstr));
      printf("IP adress: %s\n\n", ipstr);
      
+     // Builds the socket
+     int mysocket = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+     printf("mysocket = %d\n\n", mysocket);
      
+     /*
+     printf("%d\n\n", res->ai_family);
+     printf("%d\n\n", res->ai_socktype);
+     printf("%d\n\n", res->ai_protocol);
+     */
      
-
-
+     // Prints whether it is a TCP socket
+     if (res->ai_socktype == SOCK_STREAM) printf("TCP\n\n"); else printf("not TCP\n\n");
+     
+     // Connects to dest
+     int connect_status = connect(mysocket, (struct sockaddr*) dest, sizeof(struct sockaddr_in));
+     if (connect_status != 0) {
+     	printf("Connection failed\n\n");
+     	return 1;
+     }
+     printf("Successfully connected to %s (%s)\n\n", info->host, ipstr);
+     
+     // Gets the request
+     char *request = http_get_request(info);
+     printf("Sending the following request:\n%s", request);
+     int request_length = strlen(request);
+     printf("Request length: %d\n", request_length);
+     
+     // Preparing reply
+     int n = 2000;
+     reply->reply_buffer = malloc(n);
+     reply->reply_buffer_length = n - 100;
+     
+     // Sending the request
+     int sent_length = send(mysocket, request, request_length, 0);
+     printf("Sent length: %d\n\n", sent_length);
+     if (sent_length == request_length) printf("Successfully sent the message\n\n"); 
+     else printf("Message not sent entirely\n\n");
+     
+     // Receiving the answer
+     int received_length = recv(mysocket, reply->reply_buffer, reply->reply_buffer_length, 0);
+     printf("Received length: %d\n\n", received_length);
+     printf("Received message: %.1900s\n\n", reply->reply_buffer);
+     
+     printf("OK so far\n\n");
+     
 
     /*
      * To be completed:
