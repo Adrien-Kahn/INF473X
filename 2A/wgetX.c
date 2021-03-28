@@ -25,8 +25,17 @@
 #include "wgetX.h"
 
 
-// Inspired in some parts by beej.us/guide/bgnet (notably /exemples/showip.c)
+// Inspired in some parts by beej.us/guide/bgnet (notably beej.us/bgnet/examples/showip.c)
 // and https://stackoverflow.com/questions/22077802/simple-c-example-of-doing-an-http-post-and-consuming-the-response
+
+
+// Example urls for testing:
+// Short file -> beej.us/bgnet/guide/examples/showip.c
+// Long file -> beej.us/guide/bgnet/
+// Very long file -> beej.us/guide/bgnet/html/
+ 
+// Template netcat request that works:
+// printf 'GET /guide/bgnet/examples/showip.c HTTP/1.1\r\nHost: beej.us\r\nConnection: close\r\n\r\n' | netcat beej.us 80
 
 
 int main(int argc, char* argv[]) {
@@ -158,9 +167,9 @@ int download_page(url_info *info, http_reply *reply) {
      printf("Request length: %d\n", request_length);
      
      // Preparing reply
-     int n = 2000;
+     int n = 3000;
      reply->reply_buffer = malloc(n);
-     reply->reply_buffer_length = n - 100;
+     reply->reply_buffer_length = n;
      
      // Sending the request
      int sent_length = send(mysocket, request, request_length, 0);
@@ -168,31 +177,40 @@ int download_page(url_info *info, http_reply *reply) {
      if (sent_length == request_length) printf("Successfully sent the message\n\n"); 
      else printf("Message not sent entirely\n\n");
      
+     
+     
      // Receiving the answer
+     int remaining_size = n;
+     char *current_buffer = reply->reply_buffer;
+     int received_length = 1;
+     
+     while (received_length > 0) {
+     	
+     }
+     
+     
+     // Old version
+     /*
      int received_length = recv(mysocket, reply->reply_buffer, reply->reply_buffer_length, 0);
-     printf("Received length: %d\n\n", received_length);
-     printf("Received message: %.1900s\n\n", reply->reply_buffer);
+     printf("Buffer length: %d\n", reply->reply_buffer_length);
+     printf("Received length: %d\n", received_length);
+     if (reply->reply_buffer_length > received_length) printf("Successfully received entirety of the message\n\n"); 
+     else printf("Message might not have been received entirely\n\n");
+     printf("Received message: \n%.*s\n\n", n, reply->reply_buffer);
+     */
+     
+     
+     
+     // Closes the socket
+     if (close(mysocket) == 0) printf("Successfully closed socket\n\n");
+     else fprintf(stderr, "Failed to close the socket\n\n");
+     
+     // Frees the request buffer
+     free(request);
+     
      
      printf("OK so far\n\n");
      
-
-    /*
-     * To be completed:
-     *   Next, you will need to send the HTTP request.
-     *   Use the http_get_request function given to you below.
-     *   It uses malloc to allocate memory, and snprintf to format the request as a string.
-     *
-     *   Use 'write' function to send the request into the socket.
-     *
-     *   Note: You do not need to send the end-of-string \0 character.
-     *   Note2: It is good practice to test if the function returned an error or not.
-     *   Note3: Call the shutdown function with SHUT_WR flag after sending the request
-     *          to inform the server you have nothing left to send.
-     *   Note4: Free the request buffer returned by http_get_request by calling the 'free' function.
-     *
-     */
-
-
 
     /*
      * To be completed:
@@ -298,3 +316,6 @@ char *read_http_reply(struct http_reply *reply) {
 
     return buf;
 }
+
+// with n = 3000: IhvcNAQcEoIIHqjCCB6YCAQExggEwMIIBLAIBADCBlDCBjjELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtQYXlQYWwgSW5jLjETMBEGA1UECxQKbGl2ZV9jZXJ0czERMA8GA1UEAxQIbGl2ZV9hcGkxHDAaBgkqhkiG9w0BCQEWDXJlQHBheXBhbC5jb20CAQAwDQYJKoZIhvcNAQEBBQAEgYACzGjNdeobbyuFFRxWN4B7AyR3lFBKybAKc+HnQG4tBtRTx1BVzQuUTJRF2yLAT9CgaWQu/SLrAR1tNrysrFvqlXGkRe/0IUNp9wLE2flrpoRwf7Af3pRTNJdgy/JCiSti0Kaz9nR9jB8V8A8CU5gt+5fYZ5dpB0MhgUtYEeRICDELMAkGBSsOAwIaBQAwggE1BgkqhkiG9w0BBwEwFAYIKoZIhvcNAwcECDF+UJbmZdzHgIIBED/Kdg64miQoNja+JN1dLojdjTZocgYDS4ykmfBa3hmBkby3kMJWB/8oKkXN3nF8x8ZAjycNrAKejnIsq4oLYBt8/kD6KfeZmysyenw94CZhpkipGKmlvgzuJhygOw5k0wYXE/rV6k9/BVysJduTziLQJ3Yk/ye3KDV17Y8/drLAT0ueiL/sk7eWbEN6Drc1eEVL4FtfaayTWPCDF/McC6AuPLzv+RaoVX/QlOLsjuoibWrVk9P1Sq/76/bR8x5op//ZRDtHnQdy/EH86D0p6XD7EAMg2W1R01+zJ+cdYs6FyCeCFO5OH4d3Kfm1ihJ75JELAKSaomQweP0i4z68p/uoEFS1LMnDzRcwshxo3lmkoIIDhzCCA4MwggLsoAMCAQICAQAwDQYJKoZIhvcNAQEFBQAwgY4xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLUGF5UGFsIEluYy4xEzARBgNVBAsUCmxpdmVfY2VydHMxETAPBgNVBAMUCGxpdmVfYXBpMRwwGgYJKoZIhvcNAQkBFg1yZUBwYXlwYWwuY29tMB4XDTA0MDIxMzEwMTMxNVoXDTM1MDIxMzEwMTMxNVowgY4xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLUGF5UGFsIEluYy4xEzARBgNVBAsUCmxpdmVfY2VydHMxETAPBgNVBAMUCGxpdmVfYXBpMRwwGgYJKoZIhvcNAQkBFg1yZUBwYXlwYWwuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDBR07d/ETMS1ycjtkpkvjXZe9k+6CieLuLsPumsJ7QC1odNz3sJiCbs2wC0nLE0uLGaEtXynIgRqIddYCHx88pb5HTXv4SZeuv0Rqq4+axW9PLAAATU8w04qqjaSXgbGLP3NmohqM6bV9kZZwZLR/klDaQGo1u9uDb9lr4Yn+rBQIDAQABo4HuMIHrMB0GA1UdDgQWBBSWn3y7xm8XvVk/UtcKG+wQ1mSUazCBuwYDVR0jBIGzMIGwgBSWn3y7xm8XvVk/UtcKG+wQ1mSUa6GBlKSBkTCBjjELMAkGA1UEBhMCVVMxCzAJB
+
