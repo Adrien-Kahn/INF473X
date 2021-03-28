@@ -25,7 +25,8 @@
 #include "wgetX.h"
 
 
-// Inspired in some parts by beej.us/guide/bgnet
+// Inspired in some parts by beej.us/guide/bgnet (notably /exemples/showip.c)
+// and https://stackoverflow.com/questions/22077802/simple-c-example-of-doing-an-http-post-and-consuming-the-response
 
 
 int main(int argc, char* argv[]) {
@@ -98,24 +99,39 @@ int download_page(url_info *info, http_reply *reply) {
      struct addrinfo hints;
      struct addrinfo *res;
      
-     printf("hello\n"); 
-     printf("%d\n", sizeof(hints));
+     // Initializing hints
      memset(&hints, 0, sizeof(hints));
-     
      hints.ai_family = PF_UNSPEC;
      hints.ai_socktype = SOCK_STREAM;
-     hints.ai_flags = AI_CANONNAME;
      
-     int status;
-     status = getaddrinfo(info->host, info->protocol, &hints, &res);
-     printf("hello\n");  
-     printf("%d\n", status);
-     printf("hello\n");  
+     //Getting the socket
+     int status = getaddrinfo(info->host, info->protocol, &hints, &res);
      if (status != 0) {
-     	printf("yaa");
+     	printf("getaddrinfo failed\n\n");
      } else {
-     	printf("hello");
+     	printf("Successfully built socket\n\n");
      }
+     
+     // Displays IP version
+     if (res->ai_family == AF_INET) {
+     	printf("IPv4\n\n");
+     } else if (res->ai_family == AF_INET6) {
+     //COULDN'T FIND IPV6 HOST NAME			// THAT'S PROBABLY THE POINT OF THE LOOP
+     	printf("IPv6\n\n");
+     } else {
+     	printf("Unknown IP format\n\n");
+     }
+     
+     // PROBABLY WON'T WORK ON IPV4 (sockaddr_in6)
+     struct sockaddr_in *mysocket = (struct sockaddr_in *) res->ai_addr;
+     struct in_addr *myaddr = &(mysocket->sin_addr);
+     char ipstr[50];
+     
+     inet_ntop(res->ai_family, myaddr, ipstr, sizeof(ipstr));
+     printf("IP adress: %s\n\n", ipstr);
+     
+     
+     
 
 
 
