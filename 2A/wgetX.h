@@ -54,6 +54,10 @@ char* http_get_request(url_info *info);
  * \param reply the reply structure
  * \return a pointer to the first data byte
  */
-char *read_http_reply(struct http_reply *reply);
+char *read_http_reply(struct http_reply *reply, char *file_name, int n);
+
+char *parse_redirect(char *buff);
+
+int fetch(char *url, char* file_name, int n);
 
 #endif /* WGETX_H_ */

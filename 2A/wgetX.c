@@ -25,12 +25,12 @@
 #include "wgetX.h"
 
 
-// Inspired in some parts by beej.us/guide/bgnet (notably beej.us/bgnet/examples/showip.c)
+// Inspired in some parts by beej.us/guide/bgnet (notably beej.us/guide/bgnet/examples/showip.c)
 // and https://stackoverflow.com/questions/22077802/simple-c-example-of-doing-an-http-post-and-consuming-the-response
 
 
 // Example urls for testing:
-// Short file -> beej.us/bgnet/guide/examples/showip.c
+// Short file -> beej.us/guide/bgnet/examples/showip.c
 // Long file -> beej.us/guide/bgnet/
 // Very long file -> beej.us/guide/bgnet/html/
  
@@ -39,8 +39,7 @@
 
 
 int main(int argc, char* argv[]) {
-    url_info info;
-    const char * file_name = "received_page";
+    char *file_name = "received_page";
     if (argc < 2) {
 	fprintf(stderr, "Missing argument. Please enter URL.\n");
 	return 1;
@@ -52,7 +51,23 @@ int main(int argc, char* argv[]) {
     if (argc > 2) {
 	file_name = argv[2];
     }
+    
+    int n = 5;
+    
+    int status = fetch(url, file_name, n);
 
+    return status;
+}
+
+
+int fetch(char *url, char* file_name, int n) {
+    
+    if (n == 0) {
+    	return 1;
+    }
+    
+    url_info info;
+    
     // First parse the URL
     int ret = parse_url(url, &info);
     if (ret) {
@@ -74,36 +89,33 @@ int main(int argc, char* argv[]) {
     }
 
     // Now parse the responses
-    char *response = read_http_reply(&reply);
+    char *response = read_http_reply(&reply, file_name, n);
     if (response == NULL) {
 	fprintf(stderr, "Could not parse http reply\n");
 	return 4;
+    } else if (strcmp(response, "Redirect123456789") == 0) {
+    	printf("Was redirected\n\n");
+    	return 0;
     }
 
+    
+    int response_length = reply.reply_buffer + reply.reply_buffer_length - response;
+    printf("\n\nParsed response: \n%.*s\n\n", response_length, response);
+    printf("Parsed response length: %d\n\n", response_length);
+
     // Write response to a file
-    write_data(file_name, response, reply.reply_buffer + reply.reply_buffer_length - response);
+    write_data(file_name, response, response_length);
 
     // Free allocated memory
     free(reply.reply_buffer);
 
     // Just tell the user where is the file
-    fprintf(stderr, "the file is saved in %s.", file_name);
+    fprintf(stderr, "the file is saved in %s\n\n", file_name);
+    
     return 0;
 }
 
 int download_page(url_info *info, http_reply *reply) {
-
-    /*
-     * To be completed:
-     *   You will first need to resolve the hostname into an IP address.
-     *
-     *   Option 1: Simplistic
-     *     Use gethostbyname function.
-     *
-     *   Option 2: Challenge
-     *     Use getaddrinfo and implement a function that works for both IPv4 and IPv6.
-     *
-     */
      
      struct addrinfo hints;
      struct addrinfo *res;
@@ -118,7 +130,7 @@ int download_page(url_info *info, http_reply *reply) {
      if (status != 0) {
      	printf("getaddrinfo failed\n\n");
      } else {
-     	printf("Successfully built socket\n\n");
+     	printf("Successfully ran getaddrinfo\n\n");
      }
      
      // Displays IP version
@@ -141,6 +153,7 @@ int download_page(url_info *info, http_reply *reply) {
      
      // Builds the socket
      int mysocket = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+     printf("Successfully built socket\n");
      printf("mysocket = %d\n\n", mysocket);
      
      /*
@@ -167,9 +180,9 @@ int download_page(url_info *info, http_reply *reply) {
      printf("Request length: %d\n", request_length);
      
      // Preparing reply
-     int n = 3000;
-     reply->reply_buffer = malloc(n);
-     reply->reply_buffer_length = n;
+     int base_size = 1000;
+     reply->reply_buffer = malloc(base_size);
+     reply->reply_buffer_length = base_size;
      
      // Sending the request
      int sent_length = send(mysocket, request, request_length, 0);
@@ -178,15 +191,32 @@ int download_page(url_info *info, http_reply *reply) {
      else printf("Message not sent entirely\n\n");
      
      
-     
      // Receiving the answer
-     int remaining_size = n;
+     int remaining_size = base_size;
      char *current_buffer = reply->reply_buffer;
      int received_length = 1;
      
+     
      while (received_length > 0) {
      	
+     	received_length = recv(mysocket, current_buffer, remaining_size, 0);
+     	printf("Received: %d\tbytes\n", received_length);
+     	current_buffer += received_length;
+     	remaining_size -= received_length;
+     	
+     	// If the buffer has no more room left, we make it bigger
+     	if (remaining_size == 0) {
+     		reply->reply_buffer_length += base_size;
+     		reply->reply_buffer = realloc(reply->reply_buffer, reply->reply_buffer_length);
+     		remaining_size = base_size;
+     	}
      }
+     
+     // Modifying reply->reply_buffer_length so it gives the size of the buffer that is filled
+     reply->reply_buffer_length -= remaining_size;
+     
+     printf("\nReceived message: \n%.*s\n\n", reply->reply_buffer_length, reply->reply_buffer);
+     printf("Received message length: %d\n\n", reply->reply_buffer_length);
      
      
      // Old version
@@ -196,7 +226,7 @@ int download_page(url_info *info, http_reply *reply) {
      printf("Received length: %d\n", received_length);
      if (reply->reply_buffer_length > received_length) printf("Successfully received entirety of the message\n\n"); 
      else printf("Message might not have been received entirely\n\n");
-     printf("Received message: \n%.*s\n\n", n, reply->reply_buffer);
+     printf("Received message: \n%.*s\n\n", base_size, reply->reply_buffer);
      */
      
      
@@ -208,42 +238,17 @@ int download_page(url_info *info, http_reply *reply) {
      // Frees the request buffer
      free(request);
      
-     
-     printf("OK so far\n\n");
-     
-
-    /*
-     * To be completed:
-     *   Now you will need to read the response from the server.
-     *   The response must be stored in a buffer allocated with malloc, and its address must be save in reply->reply_buffer.
-     *   The length of the reply (not the length of the buffer), must be saved in reply->reply_buffer_length.
-     *
-     *   Important: calling recv only once might only give you a fragment of the response.
-     *              in order to support large file transfers, you have to keep calling 'recv' until it returns 0.
-     *
-     *   Option 1: Simplistic
-     *     Only call recv once and give up on receiving large files.
-     *     BUT: Your program must still be able to store the beginning of the file and
-     *          display an error message stating the response was truncated, if it was.
-     *
-     *   Option 2: Challenge
-     *     Do it the proper way by calling recv multiple times.
-     *     Whenever the allocated reply->reply_buffer is not large enough, use realloc to increase its size:
-     *        reply->reply_buffer = realloc(reply->reply_buffer, new_size);
-     *
-     *
-     */
-
-
-
-    return 1;
+     printf("Download Successful\n\n");
+     return 0;
 }
 
 void write_data(const char *path, const char * data, int len) {
-    /*
-     * To be completed:
-     *   Use fopen, fwrite and fclose functions.
-     */
+	FILE *file = fopen(path, "w");
+	if (file == NULL) {
+		fprintf(stderr, "Failed to open a file to write in\n\n");
+	}
+	fwrite(data, len, 1, file);
+	fclose(file);
 }
 
 char* http_get_request(url_info *info) {
@@ -268,7 +273,7 @@ char *next_line(char *buff, int len) {
     return NULL;
 }
 
-char *read_http_reply(struct http_reply *reply) {
+char *read_http_reply(struct http_reply *reply, char *file_name, int n) {
 
     // Let's first isolate the first line of the reply
     char *status_line = next_line(reply->reply_buffer, reply->reply_buffer_length);
@@ -286,36 +291,43 @@ char *read_http_reply(struct http_reply *reply) {
 	fprintf(stderr, "Could not parse http response first line (rv=%d, %s)\n", rv, reply->reply_buffer);
 	return NULL;
     }
-
-    if (status != 200) {
+    
+    if (status == 301 || status == 302) {
+    	printf("Starting redirect...\n\n");
+    	char *new_url = parse_redirect(status_line + 2);
+    	int status = fetch(new_url, file_name, n - 1);
+    	return "Redirect123456789";
+    	
+    } else if (status != 200) {
 	fprintf(stderr, "Server returned status %d (should be 200)\n", status);
 	return NULL;
     }
-
+    
+    int len = reply->reply_buffer_length - sizeof(reply->reply_buffer) - 2;
     char *buf = status_line + 2;
-
-    /*
-     * To be completed:
-     *   The previous code only detects and parses the first line of the reply.
-     *   But servers typically send additional header lines:
-     *     Date: Mon, 05 Aug 2019 12:54:36 GMT<CR><LF>
-     *     Content-type: text/css<CR><LF>
-     *     Content-Length: 684<CR><LF>
-     *     Last-Modified: Mon, 03 Jun 2019 22:46:31 GMT<CR><LF>
-     *     <CR><LF>
-     *
-     *   Keep calling next_line until you read an empty line, and return only what remains (without the empty line).
-     *
-     *   Difficul challenge:
-     *     If you feel like having a real challenge, go on and implement HTTP redirect support for your client.
-     *
-     */
-
-
-
-
-    return buf;
+    
+    while (*buf != '\r') {
+    	status_line = next_line(buf, len);
+    	if (status_line == NULL) {
+		fprintf(stderr, "Error while parsing the response\n");
+		return NULL;
+    	}
+    	*status_line = '\0';
+    	len -= sizeof(buf) + 2;
+    	buf = status_line + 2;
+    }
+    
+    printf("I was not redirected\n");
+    return buf + 2;
 }
 
-// with n = 3000: IhvcNAQcEoIIHqjCCB6YCAQExggEwMIIBLAIBADCBlDCBjjELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtQYXlQYWwgSW5jLjETMBEGA1UECxQKbGl2ZV9jZXJ0czERMA8GA1UEAxQIbGl2ZV9hcGkxHDAaBgkqhkiG9w0BCQEWDXJlQHBheXBhbC5jb20CAQAwDQYJKoZIhvcNAQEBBQAEgYACzGjNdeobbyuFFRxWN4B7AyR3lFBKybAKc+HnQG4tBtRTx1BVzQuUTJRF2yLAT9CgaWQu/SLrAR1tNrysrFvqlXGkRe/0IUNp9wLE2flrpoRwf7Af3pRTNJdgy/JCiSti0Kaz9nR9jB8V8A8CU5gt+5fYZ5dpB0MhgUtYEeRICDELMAkGBSsOAwIaBQAwggE1BgkqhkiG9w0BBwEwFAYIKoZIhvcNAwcECDF+UJbmZdzHgIIBED/Kdg64miQoNja+JN1dLojdjTZocgYDS4ykmfBa3hmBkby3kMJWB/8oKkXN3nF8x8ZAjycNrAKejnIsq4oLYBt8/kD6KfeZmysyenw94CZhpkipGKmlvgzuJhygOw5k0wYXE/rV6k9/BVysJduTziLQJ3Yk/ye3KDV17Y8/drLAT0ueiL/sk7eWbEN6Drc1eEVL4FtfaayTWPCDF/McC6AuPLzv+RaoVX/QlOLsjuoibWrVk9P1Sq/76/bR8x5op//ZRDtHnQdy/EH86D0p6XD7EAMg2W1R01+zJ+cdYs6FyCeCFO5OH4d3Kfm1ihJ75JELAKSaomQweP0i4z68p/uoEFS1LMnDzRcwshxo3lmkoIIDhzCCA4MwggLsoAMCAQICAQAwDQYJKoZIhvcNAQEFBQAwgY4xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLUGF5UGFsIEluYy4xEzARBgNVBAsUCmxpdmVfY2VydHMxETAPBgNVBAMUCGxpdmVfYXBpMRwwGgYJKoZIhvcNAQkBFg1yZUBwYXlwYWwuY29tMB4XDTA0MDIxMzEwMTMxNVoXDTM1MDIxMzEwMTMxNVowgY4xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLUGF5UGFsIEluYy4xEzARBgNVBAsUCmxpdmVfY2VydHMxETAPBgNVBAMUCGxpdmVfYXBpMRwwGgYJKoZIhvcNAQkBFg1yZUBwYXlwYWwuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDBR07d/ETMS1ycjtkpkvjXZe9k+6CieLuLsPumsJ7QC1odNz3sJiCbs2wC0nLE0uLGaEtXynIgRqIddYCHx88pb5HTXv4SZeuv0Rqq4+axW9PLAAATU8w04qqjaSXgbGLP3NmohqM6bV9kZZwZLR/klDaQGo1u9uDb9lr4Yn+rBQIDAQABo4HuMIHrMB0GA1UdDgQWBBSWn3y7xm8XvVk/UtcKG+wQ1mSUazCBuwYDVR0jBIGzMIGwgBSWn3y7xm8XvVk/UtcKG+wQ1mSUa6GBlKSBkTCBjjELMAkGA1UEBhMCVVMxCzAJB
 
+char *parse_redirect(char* buff) {
+	char *location = strstr(buff, "Location");
+	if (location == NULL) {printf("No redirect location\n\n");}
+	location += 10;
+	char *next_line = strchr(location, '\r');
+	*next_line = '\0';
+	printf("Redirecting to: %s\n\n", location);
+	return location;
+}
