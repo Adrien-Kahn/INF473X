@@ -13,7 +13,7 @@ void *increase_counter(void *);
 
 pthread_mutex_t mymutex = PTHREAD_MUTEX_INITIALIZER;
 
-int  counter = 0;
+int counter = 0;
 
 int main() {
 	
@@ -41,3 +41,4 @@ void *increase_counter(void *arg) {
 	pthread_mutex_unlock(&mymutex);
 	return NULL;
 }
+

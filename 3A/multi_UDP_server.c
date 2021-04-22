@@ -19,6 +19,9 @@ typedef struct Recv_info{
 } Recv_info;
 
 
+pthread_mutex_t writeMutex = PTHREAD_MUTEX_INITIALIZER;
+
+
 int main(int argc, char* argv[]) {
 	
 	// Fetching port number
@@ -40,8 +43,9 @@ int main(int argc, char* argv[]) {
 	
 	// Binding socket
 	int bind_status = bind(sockfd, (struct sockaddr*) &myaddr, sizeof(struct sockaddr));
-	if (bind_status != 0) printf("Failed to bind socket");
-
+	if (bind_status != 0) printf("Failed to bind socket\n\n");
+	
+	printf("Server started, waiting for incoming messages\n\n");
 
 	// Creating threads that run process_message
 	for (int k = 0; k < N_THREAD; k++) {
@@ -60,33 +64,47 @@ int main(int argc, char* argv[]) {
 
 	
 void *process_message(void *sock_pointer) {
-
-	int sockfd = *((int *)sock_pointer);
 	
-	// Building addr_in to identify the client
-	struct sockaddr_in from;
-	int *from_len;
-	int temp = (int) sizeof(struct sockaddr);
-	from_len = &temp;
-	
-	// Building received message buffer
-	int buf_len = 1000;
-	char buffer[buf_len];
-	char *buf = buffer;
-	memset(buf, 0, 1000);
-	
-	// Receiving message
-	int recv_len = recvfrom(sockfd, buf, buf_len, 0, (struct sockaddr*) &from, from_len);
-	printf("Length of the received message: %d\n", recv_len);
-	printf("Message content: \n%s\n", buf);
-	
-	// Sleeping because receiving a message is tiring
-	usleep(10000000);
-	
-	// Sending it back
-	int sent_length = sendto(sockfd, buf, recv_len, 0, (struct sockaddr*) &from, sizeof(struct sockaddr));
-	printf("Sent length: %d\n", sent_length);
-	if (sent_length != recv_len) printf("Message not sent entirely\n\n");
+	while (1) {
+		
+		int sockfd = *((int *)sock_pointer);
+		
+		// Building addr_in to identify the client
+		struct sockaddr_in from;
+		int *from_len;
+		int temp = (int) sizeof(struct sockaddr);
+		from_len = &temp;
+		
+		// Building received message buffer
+		int buf_len = 1000;
+		char buffer[buf_len];
+		char *buf = buffer;
+		memset(buf, 0, 1000);
+		
+		// Receiving message
+		int recv_len = recvfrom(sockfd, buf, buf_len, 0, (struct sockaddr*) &from, from_len);
+		//printf("Length of the received message: %d\n", recv_len);
+		pthread_mutex_lock(&writeMutex);
+		printf("Received message: \n%s\n", buf);
+		pthread_mutex_unlock(&writeMutex);
+		
+		// Sleeping because receiving a message is tiring
+		usleep(10000000);
+		
+		// Sending it back
+		int sent_length = sendto(sockfd, buf, recv_len, 0, (struct sockaddr*) &from, sizeof(struct sockaddr));
+		if (sent_length != recv_len) {
+			pthread_mutex_lock(&writeMutex);
+			printf("Message not sent entirely\n\n");
+			pthread_mutex_unlock(&writeMutex);
+		} else {
+			pthread_mutex_lock(&writeMutex);
+			printf("Sent back message:\n%s\n", buf);
+			pthread_mutex_unlock(&writeMutex);
+		}
+		//printf("Sent length: %d\n", sent_length);
+		
+	}
 	
 	return NULL;
 
