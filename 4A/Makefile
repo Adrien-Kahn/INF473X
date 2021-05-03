@@ -8,13 +8,13 @@
 
 # Here is a simple Make Macro.
 
-LINK_TARGET = pcap_example test2
+LINK_TARGET = pcap_example
 
 # Here is a Make Macro that uses the backslash to extend to multiple lines.
 # This allows quick modification of more object files.
 
 OBJS = \
-	pcap_example.o header.o test2.o
+	pcap_example.o header.o
 	
 # Here is a Make Macro defined by two Macro Expansions.
 # A Macro Expansion may be treated as a textual replacement of the Make Macro.
@@ -44,6 +44,7 @@ all : $(LINK_TARGET)
 
 clean: 
 	rm -f $(REBUILDABLES)
+	rm -f log.txt
 
 # There is no required order to the list of rules as they appear in the Makefile.
 # Make will build its own dependency tree and only execute each rule only once
@@ -54,9 +55,6 @@ clean:
 # $^ expands to the rule's dependencies
 #$(LINK_TARGET) : $(OBJS)
 pcap_example : pcap_example.o header.o
-	gcc -g3  -o  $@ $^ -lpcap
-	
-test2 : test2.o
 	gcc -g3  -o  $@ $^ -lpcap
 
 # Here is a Pattern Rule, often used for compile-line.
