@@ -71,7 +71,4 @@ $(LINK_TARGET) : $(OBJS)
 # (in this case, by the Pattern Rule above).
 # Dependency Rules are often used to capture header file dependencies.
 
-
-test : test.o
-	cc -g -o test test.o
  
