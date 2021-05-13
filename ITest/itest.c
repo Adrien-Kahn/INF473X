@@ -31,6 +31,8 @@ int main(void) {
 
 */
 
+
+/*
 int main(void) {
 	char *s;
 	s = (char *) malloc(5);
@@ -48,4 +50,13 @@ int main(void) {
 	printf("%s\n", s);
 		
 	
+}
+*/
+
+int main(void) {
+
+	char buf[256] = {0};
+	printf("%d\n", sizeof(buf));
+	return 0;
+
 }
