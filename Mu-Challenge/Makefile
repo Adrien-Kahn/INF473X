@@ -10,7 +10,7 @@ app: app.o
 	cc -g -o $@ $^
 
 %.o: %.c
-	cc -g -Wall -o $@ -c $<
+	cc -g -fno-stack-protector -Wall -o $@ -c $<
 
 clean:
 	rm OverflowAttack OverflowAttack.o

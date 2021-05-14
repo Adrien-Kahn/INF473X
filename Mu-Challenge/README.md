@@ -14,4 +14,4 @@ Based on some experimentation, it seems that without any compilation option, the
 
 If we try to reproduce the code in the app, we indeed find out that `command` is located before `greeting_text` which would not allow for the sort of attack we are doing.
 
-This suggest that some special option was indeed used to compile the app and change the order of memory allocation.
+If we use the option `-fno-stack-protector` at compilation, this behavior is overwritten and the strings are now in the reverse order of declaration. This means that `command` is located after `greeting_text` which allows for the attack we did. 
