@@ -55,8 +55,30 @@ int main(void) {
 
 int main(void) {
 
-	char buf[256] = {0};
-	printf("%d\n", sizeof(buf));
-	return 0;
+	char buf[10];
+	memset(buf, 'b', 10);
+	char command[] = "Hello";
+	char greeting_text[20];
+	memset(greeting_text, 'a', 20);
+//	strcpy(greeting_text, "Bonjour");
+//	strcat(greeting_text, buf);
+	
+	char *ptr = greeting_text;
+
+	for (int k = -50; k < 50; k++) {
+		
+		printf("%d: %c\n", k, *(ptr + k));
+	
+	}
+	
+//	strcpy(greeting_text, "Hello, dear ");
+//	strcat(greeting_text, buf);
 
 }
+
+
+
+
+
+
+
