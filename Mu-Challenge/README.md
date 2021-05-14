@@ -1,12 +1,12 @@
-### OverflowAttack
+## OverflowAttack
 
 Syntax: `./OverflowAttack "[command to run on the attacked server]"`
 
 The program will send the input command padded with 116 'a' before so that the command will overwrite the `command` string in the app. It is then executed by the app in the call `system(command)`.
 
-In order to write in the html file, one can for example use the command `sed -i '/condition/a <p>Hello world</p>' index.html` to append the line <p>Hello world</p> at the end of any line that contains the string "condition".
+In order to write in the html file, one can for example use the command `sed -i '/condition/a <p>Hello world</p>' index.html` to append the line `<p>Hello world</p>` at the end of any line that contains the string "condition".
 
-### itest
+## itest
 
 The purpose of this script is to try to figure out the order in which strings are located in memory and how it relates to the order of declaration.
 
