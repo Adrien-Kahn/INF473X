@@ -53,32 +53,18 @@ int main(void) {
 }
 */
 
-int main(void) {
+#include <sys/mman.h>
 
-	char buf[10];
-	memset(buf, 'b', 10);
-	char command[] = "Hello";
-	char greeting_text[20];
-	memset(greeting_text, 'a', 20);
-//	strcpy(greeting_text, "Bonjour");
-//	strcat(greeting_text, buf);
-	
-	char *ptr = greeting_text;
+unsigned char code[] = \
+"\xeb\x19\x31\xc0\x31\xdb\x31\xd2\x31\xc9\xb0\x04\xb3\x01\x59\xb2\x05\xcd\x80\x31\xc0\xb0\x01\x31\xdb\xcd\x80\xe8\xe2\xff\xff\xff\x68\x65\x6c\x6c\x6f";
 
-	for (int k = -50; k < 50; k++) {
-		
-		printf("%d: %c\n", k, *(ptr + k));
-	
-	}
-	
-//	strcpy(greeting_text, "Hello, dear ");
-//	strcat(greeting_text, buf);
-
+int main(){
+  printf("Shellcode length: %d\n", strlen(code));
+  int r =  mprotect((void *)((int)code & ~4095),  4096, PROT_READ | PROT_WRITE|PROT_EXEC);
+  printf("mprotect: %d\n",r);
+  int (*ret)() = (int(*)())code;
+  return ret();
 }
-
-
-
-
 
 
 

