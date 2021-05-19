@@ -27,6 +27,11 @@ int parse(int sockfd)
   printf("What is your name?\n");
   fflush(stdout);
   fgets(buf, sizeof(buf), stdin);
+  
+  for (int k = 0; k < 60; k++) {
+		printf("%d: %x\n", k, buf[k]);
+	}
+  
   strcpy(greeting_text, "Hello, dear ");
   strcat(greeting_text, buf);
   printf("%s\n", greeting_text);
