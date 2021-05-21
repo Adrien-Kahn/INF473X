@@ -14,6 +14,8 @@ From here, all we have to do is send shell commands and receive answers.
 
 Please note that for the connection to remain uninterrupted, all commands must return something. For example one can add `ls` at the end of a command.
 
+Running the attack with the new shell code (the second one) will open a reverse shell if a server is listening at `192.168.56.101` on port 31337. Running `nc -l -p 31337` on the virtual machine of the Sigma-Challenge is a way to do this.
+
 ## selfAttack
 
 `selfAttack` was an attempt at reproducing the attack locally, but even with `-z execstack` and `-fno-stack-protector`, gdb seems to indicate that the system figures out the return instruction pointer was overwritten and returns a segfault.
